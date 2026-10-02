@@ -1,0 +1,2 @@
+# DOSW_Lab7ProyectoPrincipal_Buitrago_Ibanez_Murillo_Sanchez_Vega
+Repositorio 1: Proyecto principal
