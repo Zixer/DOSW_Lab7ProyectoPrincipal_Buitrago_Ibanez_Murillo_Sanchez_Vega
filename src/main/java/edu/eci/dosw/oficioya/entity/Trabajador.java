@@ -52,12 +52,11 @@ public class Trabajador {
     @Column(nullable = false)
     private Boolean eliminadoLogico;
 
-    // Constructor vacÃo
     public Trabajador() {
     }
 
     // Constructor con atributos
-    public Trabajador(Usuario usuarioId, String nombreCompleto,
+    public Trabajador(Usuario usuario, String nombreCompleto,
                      String fotoPerfilUrl, BigDecimal tarifaAproximada,
                      Boolean disponibleAhora, String estado,
                      Double penalizacionAcumulada,
