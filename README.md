@@ -28,3 +28,17 @@ Las entidades seleccionadas permiten establecer las siguientes relaciones:
 ### Justificación de la selección
 
 La selección de estas entidades permite cubrir los requisitos de **autenticación, gestión de trabajadores y establecimiento de relaciones entre entidades** exigidos en el Laboratorio 7. Además, aprovecha las funcionalidades desarrolladas previamente en OficioYa y permite integrar la persistencia de datos mediante JPA y PostgreSQL de manera estructurada y coherente con la arquitectura del proyecto.
+
+### Evidencia de persistencia con PostgreSQL
+
+**Contenedor de base de datos (`docker_db`)**
+
+![Contenedor de base de datos](src/main/resources/docs/images/docker_db.png)
+
+**Evidencia de persistencia (`docker_evidencia`)**
+
+![Evidencia de persistencia](src/main/resources/docs/images/docker_evidencia.png)
+
+**Levantamiento de contenedores (`docker_levantamiento`)**
+
+![Levantamiento de contenedores](src/main/resources/docs/images/docker_levantamiento.png)
