@@ -12,6 +12,9 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @OneToOne(mappedBy = "usuario", fetch = FetchType.LAZY)
+    private Trabajador trabajador;
+
     @NotBlank
     @Column(nullable = false, unique = true, length = 150)
     private String email;
@@ -80,6 +83,14 @@ public class Usuario {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public Trabajador getTrabajador() {
+        return trabajador;
+    }
+
+    public void setTrabajador(Trabajador trabajador) {
+        this.trabajador = trabajador;
     }
 
     public String getTelefono() {

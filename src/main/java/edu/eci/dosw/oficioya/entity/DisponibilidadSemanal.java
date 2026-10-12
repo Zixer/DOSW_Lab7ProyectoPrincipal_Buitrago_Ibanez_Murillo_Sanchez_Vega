@@ -12,8 +12,9 @@ public class DisponibilidadSemanal {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "trabajador_id", nullable = false)
-    private Long trabajadorId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "trabajador_id", nullable = false)
+    private Trabajador trabajador;
 
     @NotBlank
     @Column(nullable = false, length = 20)
@@ -33,11 +34,11 @@ public class DisponibilidadSemanal {
     }
 
     // Constructor con atributos
-    public DisponibilidadSemanal(Long trabajadorId, String diaSemana,
+    public DisponibilidadSemanal(Trabajador trabajador, String diaSemana,
                                 LocalTime horaInicio, LocalTime horaFin,
                                 Boolean activo) {
 
-        this.trabajadorId = trabajadorId;
+        this.trabajador = trabajador;
         this.diaSemana = diaSemana;
         this.horaInicio = horaInicio;
         this.horaFin = horaFin;
@@ -54,12 +55,12 @@ public class DisponibilidadSemanal {
         this.id = id;
     }
 
-    public Long getTrabajadorId() {
-        return trabajadorId;
+    public Trabajador getTrabajador() {
+        return trabajador;
     }
 
-    public void setTrabajadorId(Long trabajadorId) {
-        this.trabajadorId = trabajadorId;
+    public void setTrabajador(Trabajador trabajador) {
+        this.trabajador = trabajador;
     }
 
     public String getDiaSemana() {
