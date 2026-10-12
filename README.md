@@ -22,8 +22,8 @@ Para implementar la persistencia relacional mediante **JPA y PostgreSQL** en el 
 
 Las entidades seleccionadas permiten establecer las siguientes relaciones:
 
-- **Usuario – Trabajador (1:1):** cada trabajador está asociado a un usuario de la plataforma.
-- **Trabajador – DisponibilidadSemanal (1:N):** un trabajador puede tener múltiples registros de disponibilidad semanal.
+- **Usuario – Trabajador (1...0/1):** cada trabajador está asociado a un usuario de la plataforma.
+- **Trabajador – DisponibilidadSemanal (1...*):** un trabajador puede tener múltiples registros de disponibilidad semanal.
 
 ### Justificación de la selección
 
