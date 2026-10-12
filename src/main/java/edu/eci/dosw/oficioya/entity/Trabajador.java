@@ -52,7 +52,6 @@ public class Trabajador {
     @Column(nullable = false)
     private Boolean eliminadoLogico;
 
-    // Constructor vacÃo
     public Trabajador() {
     }
 
