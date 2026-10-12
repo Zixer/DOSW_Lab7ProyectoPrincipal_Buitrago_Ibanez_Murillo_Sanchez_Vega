@@ -1,9 +1,12 @@
 package edu.eci.dosw.oficioya.entity;
 
+
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "trabajadores")
@@ -13,8 +16,12 @@ public class Trabajador {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "usuario_id", nullable = false)
-    private Long usuarioId;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", nullable = false, unique = true)
+    private Usuario usuario;
+
+    @OneToMany(mappedBy = "trabajador", fetch = FetchType.LAZY)
+    private List<DisponibilidadSemanal> disponibilidades = new ArrayList<>();
 
     @NotBlank
     @Column(nullable = false, length = 150)
@@ -33,12 +40,6 @@ public class Trabajador {
     @Column(nullable = false, length = 30)
     private String estado;
 
-    @Column(nullable = false)
-    private Integer trabajosCompletados;
-
-    @Column
-    private Double calificacionPromedio;
-
     @Column
     private Double penalizacionAcumulada;
 
@@ -56,24 +57,20 @@ public class Trabajador {
     }
 
     // Constructor con atributos
-    public Trabajador(Long usuarioId, String nombreCompleto,
+    public Trabajador(Usuario usuarioId, String nombreCompleto,
                      String fotoPerfilUrl, BigDecimal tarifaAproximada,
                      Boolean disponibleAhora, String estado,
-                     Integer trabajosCompletados,
-                     Double calificacionPromedio,
                      Double penalizacionAcumulada,
                      LocalDateTime fechaCreacion,
                      LocalDateTime fechaActualizacion,
                      Boolean eliminadoLogico) {
 
-        this.usuarioId = usuarioId;
+        this.usuario = usuario;
         this.nombreCompleto = nombreCompleto;
         this.fotoPerfilUrl = fotoPerfilUrl;
         this.tarifaAproximada = tarifaAproximada;
         this.disponibleAhora = disponibleAhora;
         this.estado = estado;
-        this.trabajosCompletados = trabajosCompletados;
-        this.calificacionPromedio = calificacionPromedio;
         this.penalizacionAcumulada = penalizacionAcumulada;
         this.fechaCreacion = fechaCreacion;
         this.fechaActualizacion = fechaActualizacion;
@@ -90,12 +87,12 @@ public class Trabajador {
         this.id = id;
     }
 
-    public Long getUsuarioId() {
-        return usuarioId;
+    public Usuario getUsuario() {
+    return usuario;
     }
 
-    public void setUsuarioId(Long usuarioId) {
-        this.usuarioId = usuarioId;
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
     }
 
     public String getNombreCompleto() {
@@ -138,28 +135,21 @@ public class Trabajador {
         this.estado = estado;
     }
 
-    public Integer getTrabajosCompletados() {
-        return trabajosCompletados;
-    }
-
-    public void setTrabajosCompletados(Integer trabajosCompletados) {
-        this.trabajosCompletados = trabajosCompletados;
-    }
-
-    public Double getCalificacionPromedio() {
-        return calificacionPromedio;
-    }
-
-    public void setCalificacionPromedio(Double calificacionPromedio) {
-        this.calificacionPromedio = calificacionPromedio;
-    }
-
     public Double getPenalizacionAcumulada() {
         return penalizacionAcumulada;
     }
 
     public void setPenalizacionAcumulada(Double penalizacionAcumulada) {
         this.penalizacionAcumulada = penalizacionAcumulada;
+    }
+
+    public List<DisponibilidadSemanal> getDisponibilidades() {
+        return disponibilidades;
+    }
+
+    public void setDisponibilidades(
+            List<DisponibilidadSemanal> disponibilidades) {
+        this.disponibilidades = disponibilidades;
     }
 
     public LocalDateTime getFechaCreacion() {
@@ -186,3 +176,4 @@ public class Trabajador {
         this.eliminadoLogico = eliminadoLogico;
     }
 }
+
