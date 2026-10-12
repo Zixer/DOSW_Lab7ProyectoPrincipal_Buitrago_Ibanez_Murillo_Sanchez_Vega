@@ -2,99 +2,131 @@ package edu.eci.dosw.oficioya.service;
 
 import edu.eci.dosw.oficioya.exception.CampoObligatorioException;
 import edu.eci.dosw.oficioya.exception.TrabajadorNoEncontradoException;
+
+import edu.eci.dosw.oficioya.mapper.TrabajadorMapper;
+import edu.eci.dosw.oficioya.mapper.UsuarioMapper;
+
 import edu.eci.dosw.oficioya.model.Trabajador;
-import edu.eci.dosw.oficioya.model.Usuario;
+
+import edu.eci.dosw.oficioya.repository.TrabajadorRepository;
+import edu.eci.dosw.oficioya.repository.UsuarioRepository;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
+@Transactional
 public class TrabajadorServiceImpl implements TrabajadorService {
 
-    private final Map<Long, Trabajador> trabajadores = new ConcurrentHashMap<>();
+    private final TrabajadorRepository trabajadorRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final TrabajadorMapper trabajadorMapper;
+    private final UsuarioMapper usuarioMapper;
 
-    private final AtomicLong contadorId = new AtomicLong(1);
+    // Inyección de dependencias por constructor
+    public TrabajadorServiceImpl(
+            TrabajadorRepository trabajadorRepository,
+            UsuarioRepository usuarioRepository,
+            TrabajadorMapper trabajadorMapper,
+            UsuarioMapper usuarioMapper) {
 
-    public TrabajadorServiceImpl() {
-
-        Usuario usuarioDemo = new Usuario();
-
-        usuarioDemo.setId(1L);
-        usuarioDemo.setNombre("Trabajador Demo");
-        usuarioDemo.setCorreo("demo@ejemplo.com");
-        usuarioDemo.setTelefono("3001234567");
-        usuarioDemo.setContrasena("1234");
-
-        Trabajador trabajadorDemo = new Trabajador();
-
-        trabajadorDemo.setId(1L);
-        trabajadorDemo.setNombreCompleto("Trabajador Demo");
-        trabajadorDemo.setUsuario(usuarioDemo);
-        trabajadorDemo.setDisponibleAhora(true);
-        trabajadorDemo.setTrabajosCompletados(0);
-        trabajadorDemo.setCalificacionPromedio(0.0);
-        trabajadorDemo.setPenalizacionAcumulada(0.0);
-        trabajadorDemo.setEliminadoLogico(false);
-        trabajadorDemo.setFechaCreacion(LocalDateTime.now());
-        trabajadorDemo.setFechaActualizacion(LocalDateTime.now());
-
-        trabajadores.put(1L, trabajadorDemo);
-
-        contadorId.set(2);
+        this.trabajadorRepository = trabajadorRepository;
+        this.usuarioRepository = usuarioRepository;
+        this.trabajadorMapper = trabajadorMapper;
+        this.usuarioMapper = usuarioMapper;
     }
 
+    // LISTAR TRABAJADORES
     @Override
+    @Transactional(readOnly = true)
     public List<Trabajador> listar() {
-        return new ArrayList<>(trabajadores.values());
+
+        return trabajadorRepository.findAll()
+                .stream()
+                .filter(t -> !Boolean.TRUE.equals(t.getEliminadoLogico()))
+                .map(this::convertirAModelo)
+                .toList();
     }
 
-
+    // OBTENER TRABAJADOR POR ID
     @Override
+    @Transactional(readOnly = true)
     public Trabajador obtenerPorId(Long id) {
 
-        Trabajador trabajador = trabajadores.get(id);
+        var entidad = trabajadorRepository.findById(id)
+                .orElseThrow(() ->
+                        new TrabajadorNoEncontradoException(id)
+                );
 
-        if (trabajador == null) {
-            throw new TrabajadorNoEncontradoException(id);
-        }
-
-        return trabajador;
+        return convertirAModelo(entidad);
     }
 
-
+    // CREAR TRABAJADOR
     @Override
     public Trabajador crear(Trabajador trabajador) {
 
         validarCamposObligatorios(trabajador);
 
-        Long id = contadorId.getAndIncrement();
+        String correo = trabajador.getUsuario().getCorreo();
 
-        trabajador.setId(id);
-        trabajador.setEliminadoLogico(false);
+        // Verificar que el correo no esté registrado
+        if (usuarioRepository.existsByEmail(correo)) {
+            throw new IllegalArgumentException(
+                    "Ya existe un usuario con este correo"
+            );
+        }
 
-        trabajador.setFechaCreacion(LocalDateTime.now());
+        // Convertir usuario de modelo a entidad
+        var usuarioEntidad =
+                usuarioMapper.toEntity(trabajador.getUsuario());
 
-        trabajador.setFechaActualizacion(
-                LocalDateTime.now()
+        usuarioEntidad.setId(null);
+
+        // Valor temporal para las pruebas locales del laboratorio.
+        // No utilizar contraseñas reales.
+        usuarioEntidad.setPasswordHash(
+                trabajador.getUsuario().getContrasena()
         );
 
-        trabajadores.put(id, trabajador);
+        usuarioEntidad.setEstadoCuenta("Activo");
+        usuarioEntidad.setEliminadoLogico(false);
+        usuarioEntidad.setFechaRegistro(LocalDateTime.now());
 
-        return trabajador;
+        // Guardar usuario en PostgreSQL
+        usuarioEntidad = usuarioRepository.save(usuarioEntidad);
+
+        // Convertir trabajador de modelo a entidad
+        var trabajadorEntidad =
+                trabajadorMapper.toEntity(trabajador);
+
+        trabajadorEntidad.setId(null);
+        trabajadorEntidad.setUsuario(usuarioEntidad);
+
+        trabajadorEntidad.setEstado("Activo");
+        trabajadorEntidad.setEliminadoLogico(false);
+
+        trabajadorEntidad.setFechaCreacion(LocalDateTime.now());
+        trabajadorEntidad.setFechaActualizacion(LocalDateTime.now());
+
+        // Guardar trabajador en PostgreSQL
+        trabajadorEntidad =
+                trabajadorRepository.save(trabajadorEntidad);
+
+        return convertirAModelo(trabajadorEntidad);
     }
 
-
+    // ACTUALIZAR TRABAJADOR
     @Override
-    public Trabajador actualizar(Long id,Trabajador datosNuevos) {
+    public Trabajador actualizar(Long id, Trabajador datosNuevos) {
 
-        Trabajador existente =obtenerPorId(id);
+        var existente = trabajadorRepository.findById(id)
+                .orElseThrow(() ->
+                        new TrabajadorNoEncontradoException(id)
+                );
 
         if (Boolean.TRUE.equals(existente.getEliminadoLogico())) {
             throw new IllegalStateException(
@@ -102,107 +134,134 @@ public class TrabajadorServiceImpl implements TrabajadorService {
             );
         }
 
-        validarCamposObligatorios(datosNuevos);
+        validarActualizacion(datosNuevos);
 
-        existente.setNombreCompleto(datosNuevos.getNombreCompleto());
+        // Convertir los datos nuevos utilizando MapStruct
+        var datosEntidad =
+                trabajadorMapper.toEntity(datosNuevos);
 
-        existente.setFotoPerfilUrl(datosNuevos.getFotoPerfilUrl());
+        existente.setNombreCompleto(
+                datosEntidad.getNombreCompleto()
+        );
 
-        existente.setTarifaAproximada(datosNuevos.getTarifaAproximada());
+        existente.setFotoPerfilUrl(
+                datosEntidad.getFotoPerfilUrl()
+        );
 
-        existente.setDisponibleAhora(datosNuevos.getDisponibleAhora());
+        existente.setTarifaAproximada(
+                datosEntidad.getTarifaAproximada()
+        );
 
-        existente.setTrabajosCompletados(datosNuevos.getTrabajosCompletados());
+        existente.setDisponibleAhora(
+                datosEntidad.getDisponibleAhora()
+        );
 
-        existente.setCalificacionPromedio(datosNuevos.getCalificacionPromedio());
-
-        existente.setPenalizacionAcumulada(datosNuevos.getPenalizacionAcumulada());
-
-        existente.setUsuario(datosNuevos.getUsuario());
-
-        existente.setHorarios(datosNuevos.getHorarios());
-
-        existente.setOficios(datosNuevos.getOficios());
+        existente.setPenalizacionAcumulada(
+                datosEntidad.getPenalizacionAcumulada()
+        );
 
         existente.setFechaActualizacion(LocalDateTime.now());
 
-        return existente;
+        // Guardar cambios en PostgreSQL
+        return convertirAModelo(
+                trabajadorRepository.save(existente)
+        );
     }
 
-
+    // DESACTIVAR TRABAJADOR
     @Override
     public Trabajador desactivar(Long id) {
 
-        Trabajador trabajador =obtenerPorId(id);
+        var entidad = trabajadorRepository.findById(id)
+                .orElseThrow(() ->
+                        new TrabajadorNoEncontradoException(id)
+                );
 
-        trabajador.setEliminadoLogico(true);
+        entidad.setEliminadoLogico(true);
+        entidad.setEstado("Inactivo");
+        entidad.setFechaActualizacion(LocalDateTime.now());
 
-        trabajador.setFechaActualizacion(LocalDateTime.now());
-
-        return trabajador;
+        return convertirAModelo(
+                trabajadorRepository.save(entidad)
+        );
     }
 
-
+    // BUSCAR TRABAJADOR POR CORREO
     @Override
-    public Optional<Trabajador> buscarPorCorreo(
-            String correo) {
+    @Transactional(readOnly = true)
+    public Optional<Trabajador> buscarPorCorreo(String correo) {
 
-        return trabajadores.values().stream().filter(t ->!Boolean.TRUE.equals(t.getEliminadoLogico()))
-                .filter(t ->t.getUsuario() != null)
-
-                .filter(t ->t.getUsuario().getCorreo() != null)
-
-                .filter(t ->t.getUsuario().getCorreo().equalsIgnoreCase(correo))
-
-                .findFirst();
+        return trabajadorRepository
+                .findByUsuario_EmailIgnoreCase(correo)
+                .filter(t ->
+                        !Boolean.TRUE.equals(t.getEliminadoLogico())
+                )
+                .map(this::convertirAModelo);
     }
 
+    // CONVERTIR ENTIDAD A MODELO
+    private Trabajador convertirAModelo(
+            edu.eci.dosw.oficioya.entity.Trabajador entidad) {
 
+        Trabajador modelo = trabajadorMapper.toModel(entidad);
+
+        // El mapper ignora la relación con Usuario,
+        // por eso la convertimos por separado.
+        if (entidad.getUsuario() != null) {
+
+            modelo.setUsuario(
+                    usuarioMapper.toModel(entidad.getUsuario())
+            );
+        }
+
+        return modelo;
+    }
+
+    // VALIDACIONES PARA CREAR
     private void validarCamposObligatorios(Trabajador trabajador) {
 
         if (trabajador == null) {
-            throw new CampoObligatorioException(
-                    "trabajador"
-            );
+            throw new CampoObligatorioException("trabajador");
         }
 
         if (isVacio(trabajador.getNombreCompleto())) {
-            throw new CampoObligatorioException(
-                    "nombre"
-            );
+            throw new CampoObligatorioException("nombre");
         }
 
         if (trabajador.getUsuario() == null) {
-            throw new CampoObligatorioException(
-                    "usuario"
-            );
+            throw new CampoObligatorioException("usuario");
         }
 
         if (isVacio(trabajador.getUsuario().getCorreo())) {
-            throw new CampoObligatorioException(
-                    "correo"
-            );
+            throw new CampoObligatorioException("correo");
         }
 
         if (isVacio(trabajador.getUsuario().getTelefono())) {
-            throw new CampoObligatorioException(
-                    "telefono"
-            );
+            throw new CampoObligatorioException("telefono");
         }
 
         if (isVacio(trabajador.getUsuario().getContrasena())) {
-            throw new CampoObligatorioException(
-                    "contrasena"
-            );
+            throw new CampoObligatorioException("contrasena");
         }
 
-        if (trabajador.getOficios() == null || trabajador.getOficios().isEmpty()) {
-            throw new CampoObligatorioException(
-                    "oficio principal"
-            );
+        if (trabajador.getOficios() == null ||
+                trabajador.getOficios().isEmpty()) {
+
+            throw new CampoObligatorioException("oficio principal");
         }
     }
 
+    // VALIDACIONES PARA ACTUALIZAR
+    private void validarActualizacion(Trabajador trabajador) {
+
+        if (trabajador == null) {
+            throw new CampoObligatorioException("trabajador");
+        }
+
+        if (isVacio(trabajador.getNombreCompleto())) {
+            throw new CampoObligatorioException("nombre");
+        }
+    }
 
     private boolean isVacio(String valor) {
         return valor == null || valor.isBlank();
