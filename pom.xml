@@ -55,6 +55,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- H2 PARA PRUEBAS -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- VALIDACIONES -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -72,6 +79,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- PRUEBAS DE SPRING DATA JPA - SPRING BOOT 4 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-data-jpa-test</artifactId>
             <scope>test</scope>
         </dependency>
 
