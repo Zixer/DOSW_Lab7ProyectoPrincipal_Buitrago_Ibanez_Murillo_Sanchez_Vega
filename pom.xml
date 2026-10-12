@@ -55,6 +55,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- H2 PARA PRUEBAS - LABORATORIO 7 PASO 12 -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- VALIDACIONES -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
